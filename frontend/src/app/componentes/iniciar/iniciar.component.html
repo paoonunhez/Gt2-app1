@@ -1,0 +1,19 @@
+
+<form [formGroup]="iniciarForm" class="example-form">
+  <mat-form-field class="example-full-width">
+    <input matInput placeholder="Email" formControlName="email" #email>
+    <mat-hint>nombre@ejemplo.com</mat-hint>
+  </mat-form-field>
+  <mat-form-field class="example-full-width">
+    <input type="password" matInput placeholder="Contraseña" formControlName="password" #password>
+    <mat-hint>Contraseña de acceso</mat-hint>
+  </mat-form-field>
+  <button 
+    mat-raised-button 
+    color="primary"
+    type="submit"
+    (click)="iniciar(email.value, password.value)"
+    [disabled]="iniciarForm.pristine || iniciarForm.invalid"
+    >Ingresar</button>
+
+</form>

@@ -1,0 +1,17 @@
+<section class="mat-typography">
+  <h3>Actualizar tarea</h3>
+</section>
+<br>
+<form [formGroup]="actualizarForm" class="example-form">
+  <mat-form-field class="example-full-width">
+    <input matInput placeholder="Escribir aqui..." formControlName="descripcion" #descripcion>
+  </mat-form-field>
+  <br>
+  <!-- <button type="button" mat-raised-button color="accent" routerLink="/lista">Atras</button>&nbsp; -->
+  <button 
+    type="submit" 
+    (click)="actualizar(descripcion.value)" 
+    [disabled]="actualizarForm.pristine || actualizarForm.invalid" 
+    mat-raised-button 
+    color="primary">Guardar</button>
+</form>

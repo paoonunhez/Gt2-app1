@@ -1,0 +1,6 @@
+npm install express-generator
+express .
+y
+npm install
+npm install pg-promise
+npm install bluebird
