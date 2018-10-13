@@ -14,7 +14,8 @@ const validatePayloadMiddleware = (req, res, next) => {
 
 router.post('/api/iniciar', validatePayloadMiddleware, db.iniciar);
 router.get('/api/authCookie', db.authCookie); // este es nuevo
-router.get('/api/cerrar', db.cerrar);
+router.get('/api/configuracion/cerrar', db.cerrar);
+
 
 const authMiddleware = (req, res, next) => {
     if(req.session && req.session.idusuario) {
@@ -26,7 +27,10 @@ const authMiddleware = (req, res, next) => {
     }
   };
 
-router.get( '/api/item/lista', authMiddleware, db.lista);
+
+
+router.get( '/api/item/lista', authMiddleware, db.lista); 
+router.get( '/api/item/calendario', db.calendario); 
 router.post('/api/item/nuevo', db.nuevo);
 router.get( '/api/item/:id', db.getItem);
 router.post('/api/item/actualizar/:id', db.actualizar);

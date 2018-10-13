@@ -13,14 +13,15 @@ var db = pgp(connectionString);
 */
 function iniciar(req, res, next) {
   //query a la base de datos
-  db.one('SELECT id, nombre, usuario '+
+  db.one('SELECT id, usuario, id_persona  '+
           'FROM usuarios '+
           'WHERE usuario like $1 '+
-          'AND password like $2;',
+          'AND password like $2 '+
+          'AND estado = 3;',
     // parametros para la query
     [req.body.usuario, req.body.password])
     .then(function (data) {
-      //cookie idusuario
+      // //cookie idusuario
       req.session.idusuario = data.id;
       //respuesta al cliente
       res.status(200)
@@ -48,6 +49,39 @@ function cerrar(req, res, next) {
 function authCookie(req, res, next) {
   req.session.idusuario ? res.status(200).send({estado: true}) : res.status(200).send({estado: false});
 }
+
+function calendario(req, res, next) {
+  
+  try{
+    if(req.session.idusuario){
+      // preparar parametros
+      
+      // consultar bd
+      db.any(`SELECT a.id, a.id_calendario, a.nombre, a.fecha_inicio  
+             a.fecha_fin, a.id_usuario_colab, b.id_equipo, b.nombre 
+             FROM eventos a, calendarios b 
+             WHERE fecha_inicio = $1;`,
+        [req.session.idusuario, req.params.fecha_inicio])
+        .then(function (data) {
+          res.status(200)
+            .json(data);
+        })
+        .catch(function (err) {
+          return next(err);
+        });
+    } else {
+      res.status(404)
+      .json({
+        estado: false
+      });
+    }
+  } catch(err){}
+}
+
+
+
+
+
 
 function lista(req, res, next) {
   try{
@@ -187,6 +221,8 @@ function eliminar(req, res, next) {
 module.exports = {
   iniciar: iniciar,
   cerrar: cerrar,
+  calendario:calendario,
+
   lista: lista,
   nuevo: nuevo,
   getItem: getItem,
