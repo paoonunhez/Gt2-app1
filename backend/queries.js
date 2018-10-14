@@ -13,16 +13,19 @@ var db = pgp(connectionString);
 */
 function iniciar(req, res, next) {
   //query a la base de datos
-  db.one('SELECT id, usuario, id_persona  '+
-          'FROM usuarios '+
-          'WHERE usuario like $1 '+
-          'AND password like $2 '+
-          'AND estado = 3;',
+  db.one(`SELECT id, usuario, id_persona, id_perfil 
+          FROM usuarios 
+          WHERE usuario like $1
+          AND password like $2 
+          AND estado = 3;`,
     // parametros para la query
     [req.body.usuario, req.body.password])
     .then(function (data) {
       // //cookie idusuario
+      
       req.session.idusuario = data.id;
+      req.session.idperfil = data.id_perfil;
+      
       //respuesta al cliente
       res.status(200)
         .json({
@@ -50,18 +53,43 @@ function authCookie(req, res, next) {
   req.session.idusuario ? res.status(200).send({estado: true}) : res.status(200).send({estado: false});
 }
 
-function calendario(req, res, next) {
-  
+function calendarioListaCalendario(req, res, next) {
   try{
     if(req.session.idusuario){
       // preparar parametros
       
       // consultar bd
-      db.any(`SELECT a.id, a.id_calendario, a.nombre, a.fecha_inicio  
-             a.fecha_fin, a.id_usuario_colab, b.id_equipo, b.nombre 
-             FROM eventos a, calendarios b 
-             WHERE fecha_inicio = $1;`,
-        [req.session.idusuario, req.params.fecha_inicio])
+      db.any(`SELECT a.id, a.nombre 
+               FROM calendarios a, usuarios b 
+               WHERE b.id = $1;`,
+        [req.session.idusuario])
+        .then(function (data) {
+          res.status(200)
+            .json(data);
+        })
+        .catch(function (err) {
+          return next(err);
+        });
+    } else {
+      res.status(404)
+      .json({
+        estado: false
+      });
+    }
+  } catch(err){}
+}
+function calendarioListaEventos(req, res, next) {
+  try{
+    if(req.session.idusuario){
+      // preparar parametros
+      
+      // consultar bd
+      db.any(`SELECT a.id, a.nombre, a.fecha_inicio 
+              FROM eventos a 
+              WHERE a.id_usuario_colab =$1 and 
+              to_char(a.fecha_inicio,'YYYY,MM,DD')= to_char(now(), 'YYYY,MM,DD') 
+              and a.id_calendario =$2;`,
+        [req.session.idusuario])
         .then(function (data) {
           res.status(200)
             .json(data);
@@ -82,6 +110,7 @@ function calendario(req, res, next) {
 
 
 
+// viejos
 
 function lista(req, res, next) {
   try{
@@ -221,8 +250,15 @@ function eliminar(req, res, next) {
 module.exports = {
   iniciar: iniciar,
   cerrar: cerrar,
-  calendario:calendario,
+  // nuevos
+  calendarioListaCalendario:calendarioListaCalendario,
+  calendarioListaEventos:calendarioListaEventos,
 
+
+
+
+
+  // viejos
   lista: lista,
   nuevo: nuevo,
   getItem: getItem,
