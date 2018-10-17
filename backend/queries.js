@@ -22,7 +22,7 @@ function iniciar(req, res, next) {
     [req.body.usuario, req.body.password])
     .then(function (data) {
       // //cookie idusuario
-      
+
       req.session.idusuario = data.id;
       req.session.idperfil = data.id_perfil;
       
@@ -58,8 +58,9 @@ function calendarioListaCalendario(req, res, next) {
     if(req.session.idusuario){
       // preparar parametros
       
-      // consultar bd
-      db.any(`SELECT a.id, a.nombre 
+      // consultar bd 
+
+      db.any(`SELECT a.id, a.nombre
                FROM calendarios a, usuarios b 
                WHERE b.id = $1;`,
         [req.session.idusuario])
@@ -78,18 +79,43 @@ function calendarioListaCalendario(req, res, next) {
     }
   } catch(err){}
 }
-function calendarioListaEventos(req, res, next) {
+
+function calendarioListaEventosHoy(req, res, next) {
   try{
     if(req.session.idusuario){
-      // preparar parametros
+      // preparar parametros     
+      let calendario = parseInt(req.params.id_calendario);
       
+      
+
+      // verificar perfil
+      let query=``;
+      if(req.session.idperfil==1)
+      { //sup
+        query = `SELECT  a.id as id,
+                    to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha, 
+                    concat (p.nombre, ' ', p.apellido, ' | ', u.nombre) as nombre
+                    FROM    eventos a, ubicaciones u, personas p
+                    WHERE   a.id_ubicacion = u.id and 
+                    a.id_usuario_colab = $1 and
+                    to_char(a.fecha_inicio,'YYYY-MM-DD')= to_char(now(), 'YYYY-MM-DD') and
+                    a.id_calendario= $2
+                `;
+      } else 
+      { //miembro
+        query =`SELECT  a.id as id,
+                    concat (a.nombre, ' | ', u.nombre ) as Turno,
+                    to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha
+                    FROM    eventos a, ubicaciones u
+                    WHERE   a.id_ubicacion = u.id and 
+                    a.id_usuario_colab =$1 and
+                    to_char(a.fecha_inicio,'YYYY-MM-DD')= to_char(now(), 'YYYY-MM-DD') and
+                    a.id_calendario=$2
+                `;
+      }
       // consultar bd
-      db.any(`SELECT a.id, a.nombre, a.fecha_inicio 
-              FROM eventos a 
-              WHERE a.id_usuario_colab =$1 and 
-              to_char(a.fecha_inicio,'YYYY,MM,DD')= to_char(now(), 'YYYY,MM,DD') 
-              and a.id_calendario =$2;`,
-        [req.session.idusuario])
+      db.any(query,
+        [req.session.idusuario, calendario])
         .then(function (data) {
           res.status(200)
             .json(data);
@@ -107,7 +133,110 @@ function calendarioListaEventos(req, res, next) {
 }
 
 
+function calendarioListaEventos(req, res, next) {
+  try{
+    if(req.session.idusuario){
+      // preparar parametros     
+      
+      let calendario = parseInt(req.params.id_calendario);
+      
+    
 
+      // verificar perfil
+      let query=``;
+      if(req.session.idperfil==1)
+      { //sup
+        query = `SELECT a.id, 
+                        a.id_calendario, 
+                        concat (p.nombre, ' ', p.apellido, ' | ', u.nombre) as nombre
+                        to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha,
+                 FROM eventos am eventos a, ubicaciones u, personas p
+                 WHERE a.id_ubicacion = u.id and   
+                      a.id_usuario_colab =$1 and
+                      to_char(a.fecha_inicio,'YYYY-MM-DD') = $2 and 
+                      a.id_calendario=$3
+               ;`
+      } else 
+      { //miembro
+        query =`SELECT a.id, 
+                      a.id_calendario, 
+                      concat (a.nombre, ' | ', u.nombre ) as Turno,
+                      to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha,
+                FROM eventos a, eventos a, ubicaciones u, personas p
+                WHERE a.id_ubicacion = u.id and   
+                      a.id_usuario_colab =$1 and
+                      to_char(a.fecha_inicio,'YYYY-MM-DD') = $2 and 
+                      a.id_calendario=$3
+               ;`
+      }
+      // consultar bd
+      db.any(query,
+        [req.session.idusuario, calendario])
+        .then(function (data) {
+          res.status(200)
+            .json(data);
+        })
+        .catch(function (err) {
+          return next(err);
+        });
+    } else {
+      res.status(404)
+      .json({
+        estado: false
+      });
+    }
+  } catch(err){}
+}
+
+
+function nuevoListaEventos(req, res, next) {
+  try{
+    if(req.session.idusuario){
+      // preparar parametros
+      
+      //consultar bd
+      
+       // verificar perfil
+       let query=``;
+       if(req.session.idperfil==1)
+       { //sup
+        
+         query = `INSERT INTO eventos ( id_calendario, nombre, fecha_inicio, repetir, 
+                                        tiempo_alerta, id_usuario_colab, color, margen_entrada, margen_salida, 
+                                        id_ubicacion, fecha_fin)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                  ;`
+                  
+       }  else 
+       {
+        res.status(403)
+        .json({
+          estado: false,
+          data: "no posee permiso"
+       });
+      }
+      db.none(
+        query,
+        [req.body.id_calendario, req.body.nombre, req.body.fecha_inicio, req.body.repetir,
+          req.body.tiempo_alerta, req.body.id_usuario_colab, req.body.color,req.body.margen_entrada, req.body.margen_salida,
+           req.body.id_ubicacion, req.body.fecha_fin, req.session.idusuario])
+        .then(function () {
+          res.status(200)
+            .json({
+              estado: true,
+            });
+        })
+        .catch(function (err) {
+          return next(err);
+        });
+    } else {
+      res.status(404)
+      .json({
+        estado: false
+      });
+    }
+  } catch(err){}
+}
 
 
 // viejos
@@ -252,9 +381,9 @@ module.exports = {
   cerrar: cerrar,
   // nuevos
   calendarioListaCalendario:calendarioListaCalendario,
+  calendarioListaEventosHoy:calendarioListaEventosHoy,
   calendarioListaEventos:calendarioListaEventos,
-
-
+  nuevoListaEventos:nuevoListaEventos,
 
 
 

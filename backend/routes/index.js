@@ -28,8 +28,10 @@ const authMiddleware = (req, res, next) => {
   };
 
 // nuevos endpoint
-router.get( '/api/calendario/lista/calendarios', db.calendarioListaCalendario); 
-router.get( '/api/calendario/lista/eventos', db.calendarioListaEventos);
+router.get( '/api/calendario/lista/calendarios', authMiddleware, db.calendarioListaCalendario); 
+router.get( '/api/calendario/lista/eventos/hoy/:id_calendario', authMiddleware, db.calendarioListaEventosHoy);
+router.get( '/api/calendario/lista/eventos/:id_calendario', authMiddleware, db.calendarioListaEventos);
+router.post( '/api/calendario/lista/eventos/nuevo', authMiddleware,db.nuevoListaEventos);
 
 
 
@@ -45,6 +47,7 @@ router.post('/api/item/eliminar/:id', db.eliminar);
 
 // application -------------------------------------------------------------
 router.get('/', function (req, res) {
+
 
     res.render('index', {title: 'node-postgres-promises'}); // load the single view file (angular will handle the page changes on the front-end)
 });
