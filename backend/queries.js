@@ -135,43 +135,61 @@ function calendarioListaEventosHoy(req, res, next) {
 
 function calendarioListaEventos(req, res, next) {
   try{
-    if(req.session.idusuario){
-      // preparar parametros     
-      
-      let calendario = parseInt(req.params.id_calendario);
-      
-    
 
+    //validar parametros
+    //verificar si son numeros
+    let dia = parseInt(req.params.dia);
+    let mes = parseInt(req.params.mes);
+    let anho = parseInt(req.params.anho);
+    let calendario = parseInt(req.params.id_calendario);
+
+    if(req.session.idusuario && mes >=1 && mes<=12 && anho>0 && dia>=1){
+      console.log('hola gggggg');
+      
+      // preparar parametros     
+          
+      if(mes<10){
+        mes = '0'+mes;
+      }      
+      if(dia<10){
+        dia = '0'+dia;
+      }
+    
+      const fecha = anho + '-' + mes + '-' + dia;
+      console.log(fecha);
+      
+      
       // verificar perfil
       let query=``;
-      if(req.session.idperfil==1)
+    
+      if(parseInt(req.session.idperfil)==1)
       { //sup
         query = `SELECT a.id, 
                         a.id_calendario, 
-                        concat (p.nombre, ' ', p.apellido, ' | ', u.nombre) as nombre
-                        to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha,
-                 FROM eventos am eventos a, ubicaciones u, personas p
+                        concat(p.nombre, ' ', p.apellido, ' | ', u.nombre) as nombre,
+                        to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha
+                 FROM eventos a, ubicaciones u, personas p
                  WHERE a.id_ubicacion = u.id and   
                       a.id_usuario_colab =$1 and
                       to_char(a.fecha_inicio,'YYYY-MM-DD') = $2 and 
-                      a.id_calendario=$3
-               ;`
+                      a.id_calendario=$3;`
       } else 
       { //miembro
         query =`SELECT a.id, 
                       a.id_calendario, 
                       concat (a.nombre, ' | ', u.nombre ) as Turno,
-                      to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha,
-                FROM eventos a, eventos a, ubicaciones u, personas p
+                      to_char(a.fecha_inicio,'YYYY-MM-DD HH24:MM') as fecha
+                FROM eventos a, ubicaciones u, personas p
                 WHERE a.id_ubicacion = u.id and   
                       a.id_usuario_colab =$1 and
                       to_char(a.fecha_inicio,'YYYY-MM-DD') = $2 and 
-                      a.id_calendario=$3
-               ;`
+                      a.id_calendario=$3;`
       }
+      console.log('holisss');
+      
       // consultar bd
       db.any(query,
-        [req.session.idusuario, calendario])
+        [req.session.idusuario, fecha, calendario])
         .then(function (data) {
           res.status(200)
             .json(data);

@@ -30,7 +30,7 @@ const authMiddleware = (req, res, next) => {
 // nuevos endpoint
 router.get( '/api/calendario/lista/calendarios', authMiddleware, db.calendarioListaCalendario); 
 router.get( '/api/calendario/lista/eventos/hoy/:id_calendario', authMiddleware, db.calendarioListaEventosHoy);
-router.get( '/api/calendario/lista/eventos/:id_calendario', authMiddleware, db.calendarioListaEventos);
+router.get( '/api/calendario/lista/eventos/:id_calendario/:anho/:mes/:dia', authMiddleware, db.calendarioListaEventos);
 router.post( '/api/calendario/lista/eventos/nuevo', authMiddleware,db.nuevoListaEventos);
 
 
