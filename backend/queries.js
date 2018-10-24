@@ -144,7 +144,6 @@ function calendarioListaEventos(req, res, next) {
     let calendario = parseInt(req.params.id_calendario);
 
     if(req.session.idusuario && mes >=1 && mes<=12 && anho>0 && dia>=1){
-      console.log('hola gggggg');
       
       // preparar parametros     
           
@@ -156,7 +155,7 @@ function calendarioListaEventos(req, res, next) {
       }
     
       const fecha = anho + '-' + mes + '-' + dia;
-      console.log(fecha);
+    
       
       
       // verificar perfil
@@ -185,7 +184,7 @@ function calendarioListaEventos(req, res, next) {
                       to_char(a.fecha_inicio,'YYYY-MM-DD') = $2 and 
                       a.id_calendario=$3;`
       }
-      console.log('holisss');
+     
       
       // consultar bd
       db.any(query,
@@ -207,8 +206,107 @@ function calendarioListaEventos(req, res, next) {
 }
 
 
-function nuevoListaEventos(req, res, next) {
+function calendarioListaVerTurno (req, res, next) {
   try{
+    
+    let evento = parseInt(req.params.id);
+    let usuario_colab = parseInt(req.params.id_usuario_colab);
+    
+    
+    if(req.session.idusuario){
+      // preparar parametros
+  
+      
+      //consultar bd
+      
+       // verificar perfil
+       
+      db.any(`SELECT 	e.id as Id, e.nombre as Titulo, u.nombre as Ubicacion,
+                      to_char (e.fecha_inicio, 'YYYY-MM-DD HH24:MM') as Inicio, 
+                      to_char(e.fecha_fin, 'YYYY-MM-DD HH24:MM') as Fin, 
+                      e.tiempo_alerta as Alerta, e.repetir as Repetir, e.color as Color, e.margen_entrada as Entrada, e.margen_salida as Salida 
+              FROM 	eventos e, ubicaciones u
+              WHERE  e.id_ubicacion = u.id AND e.id= 5 AND e.id_usuario_colab = 5 AND e.estado = 3
+      	    ;`,
+        [req.session.idusuario, evento, usuario_colab])
+        .then(function (data) {
+          res.status(200)
+            .json(data);
+        })
+        .catch(function (err) {
+          return next(err);
+        });
+    } else {
+      res.status(404)
+      .json({
+        estado: false
+      });
+    }
+  } catch(err){}
+}
+
+//selectque trae nombre de calendario y usuarios_colaboradores
+function  calendariosListaNuevoDetalles(req, res, next) {
+  try{
+
+    let usuario_sup = parseInt(req.params.id_usuario_sup);
+    if(req.session.idusuario){
+      // preparar parametros
+      
+      //consultar bd
+      
+       // verificar perfil
+       let query=``;
+       if(parseInt(req.session.idperfil)==1)
+       { //sup
+        
+        
+         query = `
+                  SELECT 	distinct (c.id), (c.nombre),
+                          concat 	 (pc.nombre, ' ', pc.apellido)
+                  FROM 		calendarios as c, personas as p, relaciones as r, equipos as e, 
+                          usuarios us, usuarios uc, personas pc
+                  WHERE 	r.id_usuario_sup = $1
+                          and	c.id_equipo = e.id
+                          and	e.id = r.id_equipo
+                          and	r.id_usuario_sup = us.id
+                          and	r.id_usuario_colab = uc.id
+                          and 	r.id_equipo = e.id
+                          and	uc.id_persona = pc.id
+                `;
+
+                console.log("prueba");
+       }  else 
+       {
+        res.status(403)
+        .json({
+          estado: false,
+          data: "no posee permiso"
+       });
+      }
+      db.any(query, 
+        [req.session.idusuario, usuario_sup])
+        .then(function (data) {
+          res.status(200)
+            .json(data);
+        })
+        .catch(function (err) {
+          return next(err);
+        });
+    } else {
+      res.status(404)
+      .json({
+        estado: false
+      });
+    }
+  } catch(err){}
+}
+
+//insert de nuevo
+function calendarioListaNuevoDetallesOtros(req, res, next) {
+  try{
+    let equipo = parseInt(req.params.id_equipo);
+
     if(req.session.idusuario){
       // preparar parametros
       
@@ -218,13 +316,10 @@ function nuevoListaEventos(req, res, next) {
        let query=``;
        if(req.session.idperfil==1)
        { //sup
-        
-         query = `INSERT INTO eventos ( id_calendario, nombre, fecha_inicio, repetir, 
-                                        tiempo_alerta, id_usuario_colab, color, margen_entrada, margen_salida, 
-                                        id_ubicacion, fecha_fin)
-                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                  ;`
-                  
+         query = `INSERT INTO  eventos(fecha_inicio, repetir, tiempo_alerta, color, 
+                               margen_entrada, margen_salida, id_ubicacion,fecha_fin)
+                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+                `;
        }  else 
        {
         res.status(403)
@@ -233,11 +328,10 @@ function nuevoListaEventos(req, res, next) {
           data: "no posee permiso"
        });
       }
-      db.none(
-        query,
-        [req.body.id_calendario, req.body.nombre, req.body.fecha_inicio, req.body.repetir,
-          req.body.tiempo_alerta, req.body.id_usuario_colab, req.body.color,req.body.margen_entrada, req.body.margen_salida,
-           req.body.id_ubicacion, req.body.fecha_fin, req.session.idusuario])
+      db.none(query, 
+        [ req.body.fecha_inicio, req.body.repetir, req.body.tiempo_alerta, req.body.color, 
+          req.body.margen_entrada, req.body.margen_salida, req.body.id_ubicacion, req.body.fecha_fin, 
+          req.session.idusuario])
         .then(function () {
           res.status(200)
             .json({
@@ -401,7 +495,9 @@ module.exports = {
   calendarioListaCalendario:calendarioListaCalendario,
   calendarioListaEventosHoy:calendarioListaEventosHoy,
   calendarioListaEventos:calendarioListaEventos,
-  nuevoListaEventos:nuevoListaEventos,
+  calendarioListaVerTurno:calendarioListaVerTurno,
+  calendariosListaNuevoDetalles:calendariosListaNuevoDetalles,
+  calendarioListaNuevoDetallesOtros:calendarioListaNuevoDetallesOtros,
 
 
 
