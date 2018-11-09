@@ -25,15 +25,31 @@ const authMiddleware = (req, res, next) => {
         errorMessage: 'You must be logged in.'
       });
     }
-  };
+  }
 
-// nuevos endpoint
+// nuevos endpoint pao
 router.get( '/api/calendario/lista/calendarios', authMiddleware, db.calendarioListaCalendario); 
-router.get( '/api/calendario/lista/eventos/hoy/:id_calendario', authMiddleware, db.calendarioListaEventosHoy);
+router.get( '/api/calendario/lista/eventos/hoy/:id_usuario_colab/:id_calendario', authMiddleware, db.calendarioListaEventosHoy);
 router.get( '/api/calendario/lista/eventos/:id_calendario/:anho/:mes/:dia', authMiddleware, db.calendarioListaEventos);
 router.get( '/api/calendario/lista/ver/turno/:id/:id_usuario_colab', authMiddleware, db.calendarioListaVerTurno);
-router.get( '/api/calendario/lista/nuevo/detalles/:id_usuario_sup', db.calendariosListaNuevoDetalles);
+router.get( '/api/calendario/lista/nuevo/detalles', authMiddleware, db.calendariosListaNuevoDetalles);
 router.post( '/api/calendario/lista/nuevo/detalles/otros', authMiddleware, db.calendarioListaNuevoDetallesOtros);
+router.get( '/api/configuracion/usuario/perfil/usuario/:id', authMiddleware, db.configuracionUsuarioPerfilUsuario);
+router.get( '/api/configuracion/usuario/perfil/empresa', authMiddleware, db.configuracionUsuarioPerfilEmpresa);
+router.post( '/api/configuracion/usuario/perfil/usuario/anhadir', authMiddleware, db.configuracionUsuarioPerfilUsuarioAnhadir);
+router.get( '/api/configuracion/usuario/perfil/usuario/promover/:id', authMiddleware, db.configuracionUsuarioPerfilUsuarioPromover);
+router.get( '/api/configuracion/usuario/perfil/usuario/eliminar/:id', authMiddleware, db.configuracionUsuarioPerfilUsuarioEliminar);
+router.get( '/api/configuracion/calendario/tiempo/alerta', authMiddleware, db.configuracionCalendarioTiempoAlerta);
+router.post( '/api/configuracion/calendario/actualizar/tiempo', authMiddleware, db.configuracionCalendarioActualizarTiempo);
+router.post( '/api/configuracion/calendario/nuevo', authMiddleware, db.configuracionCalendarioNuevo);
+
+
+
+
+// nuevos endpoint rod
+router.get( '/api/inicio/agenda/ahora', authMiddleware, db.inicioAgendaAhora);
+router.get( '/api/inicio/agenda/manana', authMiddleware, db.inicioAgendaManana);
+router.get( '/api/inicio/solicitudes', authMiddleware, db.inicioSolicitudes);
 
 // viejos
 router.get( '/api/item/lista', authMiddleware, db.lista); 
