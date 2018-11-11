@@ -42,14 +42,13 @@ router.get( '/api/configuracion/usuario/perfil/usuario/eliminar/:id', authMiddle
 router.get( '/api/configuracion/calendario/tiempo/alerta', authMiddleware, db.configuracionCalendarioTiempoAlerta);
 router.post( '/api/configuracion/calendario/actualizar/tiempo', authMiddleware, db.configuracionCalendarioActualizarTiempo);
 router.post( '/api/configuracion/calendario/nuevo', authMiddleware, db.configuracionCalendarioNuevo);
+router.get( '/api/obtener/calendario', authMiddleware, db.obteneCalendario);
 
 
 
 
 // nuevos endpoint rod
-router.get( '/api/inicio/agenda/ahora', authMiddleware, db.inicioAgendaAhora);
-router.get( '/api/inicio/agenda/manana', authMiddleware, db.inicioAgendaManana);
-router.get( '/api/inicio/solicitudes', authMiddleware, db.inicioSolicitudes);
+
 
 // viejos
 router.get( '/api/item/lista', authMiddleware, db.lista); 

@@ -327,7 +327,7 @@ function  calendariosListaNuevoDetalles(req, res, next) {
   } catch(err){}
 }
 
-//insert de nuevo
+
 function calendarioListaNuevoDetallesOtros(req, res, next) {
   try{
     // let equipo = parseInt(req.params.id_equipo);
@@ -337,12 +337,15 @@ function calendarioListaNuevoDetallesOtros(req, res, next) {
       
       //consultar bd
 
-      db.none(`INSERT INTO  eventos(fecha_inicio, repetir, 
-                              margen_entrada, margen_salida, id_ubicacion,fecha_fin, id_empresa)
-                     VALUES ($1,$2,$3,$4,$5,$6,$7);` , 
-        [req.body.fecha_inicio, req.body.repetir,  
-          req.body.margen_entrada, req.body.margen_salida, req.body.id_ubicacion, req.body.fecha_fin, 
-          req.session.iempresa])
+      db.none(`INSERT INTO eventos(
+                                    id_calendario, nombre, fecha_inicio, repetir, tiempo_alerta, 
+                                    id_usuario_colab, color, margen_entrada, margen_salida, 
+                                    id_ubicacion, fecha_fin, estado, id_empresa)
+              VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 3, $12);` , 
+        [req.body.id_calendario, req.body.nombre, req.body.fecha_inicio, req.body.repetir,  
+         req.body.tiempo_alerta, req.body.id_usuario_colab, req.body.color, req.body.margen_entrada, 
+         req.body.margen_salida, req.body.id_ubicacion, req.body.fecha_fin,
+         req.session.idempresa])
         .then(function () {
           res.status(200)
             .json({
@@ -609,151 +612,41 @@ function configuracionCalendarioNuevo(req, res, next) {
   } catch(err){}
 }
 
+function obteneCalendario(req, res, next) {
+  try{
+
+    if(req.session.idusuario && req.session.idperfil == 1){
+      // preparar parametros
+            // consultar bd
+      db.any(`SELECT c.nombre
+              FROM  calendarios c, relaciones	r				
+              WHERE c.id_empresa = $1 and
+                    c.id_empresa = r.id_empresa and
+                    r.id_usuario_sup = $2 ;`,
+        [req.session.idempresa, req.session.idusuario])
+        .then(function (data) {
+          // console.log(data);
+          res.status(200)
+            .json(data);
+        })
+        .catch(function (err) {
+          return next(err);
+        });
+    } else {
+      res.status(404)
+      .json({
+        estado: false
+      });
+    }
+  } catch(err){}
+}
+
 
 
 
 
 // nuevos rod
 
-function inicioAgendaAhora(req, res, next) {
-  try{
-    if(req.session.idusuario){
-      // preparar parametros
-      
-      // consultar bd
-      db.any(`select e.id as id, 
-                e.id_usuario_colab, 
-                to_char(e.fecha_inicio, 'YYYY-MM-DD HH24:MM') as fecha, 
-                to_char(e.fecha_inicio, 'DD') as dia, 
-                to_char(e.fecha_inicio, 'MM') as mes, 
-                to_char(e.fecha_inicio, 'HH24:MI') as hora_inicio, 
-                to_char(e.fecha_fin, 'HH24:MI') as hora_fin, 
-                concat(e.nombre, ' | ' , u.nombre) as descripcion 
-              from eventos as e 
-                left join ubicaciones as u on e.id_ubicacion = u.id 
-              where to_char(e.fecha_inicio, 'YYYY-MM-DD') = to_char(now(), 'YYYY-MM-DD') and 
-                to_char(now(), 'HH24:MI') >= to_char(e.fecha_inicio, 'HH24:MI') and 
-                to_char(now(), 'HH24:MI') <= to_char(e.fecha_fin, 'HH24:MI') and 
-                id_usuario_colab = $1 -- filtrar por mi id de usuario 
-              limit 1;`,
-        [req.session.idusuario])
-        .then(function (data) {
-          // console.log(data);
-          res.status(200)
-            .json(data);
-        })
-        .catch(function (err) {
-          return next(err);
-        });
-    } else {
-      res.status(404)
-      .json({
-        estado: false
-      });
-    }
-  } catch(err){}
-}
-
-function inicioAgendaManana(req, res, next) {
-  try{
-    if(req.session.idusuario){
-      // preparar parametros
-      
-      // consultar bd
-      db.any(`select e.id as id, 
-                e.id_usuario_colab,
-                to_char(e.fecha_inicio, 'YYYY-MM-DD HH24:MM') as fecha, 
-                to_char(e.fecha_inicio, 'DD') as dia,
-                to_char(e.fecha_inicio, 'MM') as mes,
-                to_char(e.fecha_inicio, 'HH24:MI') as hora_inicio,
-                to_char(e.fecha_fin, 'HH24:MI') as hora_fin,
-                concat(e.nombre, ' | ' , u.nombre) as descripcion
-              from eventos as e 
-                left join ubicaciones as u on e.id_ubicacion = u.id
-              where to_char(e.fecha_inicio, 'YYYY-MM-DD') = to_char(now() + interval '1 days', 'YYYY-MM-DD') and
-                id_usuario_colab = $1 -- filtrar por mi id de usuario
-              order by fecha asc
-              limit 1;`,
-        [req.session.idusuario])
-        .then(function (data) {
-          // console.log(data);
-          res.status(200)
-            .json(data);
-        })
-        .catch(function (err) {
-          return next(err);
-        });
-    } else {
-      res.status(404)
-      .json({
-        estado: false
-      });
-    }
-  } catch(err){}
-}
-
-function inicioSolicitudes(req, res, next) {
-  try{
-    if(req.session.idusuario){
-      // preparar parametros
-      
-      // consultar bd
-      db.any(`(
-              select s.id as id, 
-                s.id_usuario_colab,
-                to_char(e.fecha_inicio, 'YYYY-MM-DD HH24:MM') as fecha,
-                to_char(e.fecha_inicio, 'DD') as dia,
-                to_char(e.fecha_inicio, 'MM') as mes,
-                to_char(e.fecha_inicio, 'HH24:MI') as hora_inicio,
-                to_char(e.fecha_fin, 'HH24:MI') as hora_fin,
-                concat(st.nombre,' | ' , p.nombre, ' ', p.apellido) as descripcion 
-              from solicitudes as s 
-                left join solicitudes_tipos as st on s.id_tipo = st.id 
-                left join eventos as e on s.id_evento_colab = e.id 
-                left join usuarios as u on s.id_usuario_colab_cambio = u.id 
-                left join personas as p on u.id_persona = p.id 
-              where s.id_tipo = 2 and -- cambio de turno
-                s.id_usuario_colab = $1 -- mias
-              order by fecha asc 
-              limit 1
-              )
-              union all
-              (
-              -- ultima ausencia
-              select s.id as id, 
-                s.id_usuario_colab,
-                to_char(e.fecha_inicio, 'YYYY-MM-DD HH24:MM') as fecha,
-                to_char(e.fecha_inicio, 'DD') as dia,
-                to_char(e.fecha_inicio, 'MM') as mes,
-                to_char(e.fecha_inicio, 'HH24:MI') as hora_inicio,
-                to_char(e.fecha_fin, 'HH24:MI') as hora_fin,
-                concat(st.nombre,' | ' , m.nombre) as descripcion
-              from solicitudes as s 
-                left join solicitudes_tipos as st on s.id_tipo = st.id 
-                left join eventos as e on s.id_evento_colab = e.id 
-                left join motivos as m on s.id_motivo = m.id 
-              where s.id_tipo = 1 and -- ausencias 
-                s.id_usuario_colab = $1 -- mias
-              order by fecha asc 
-              limit 1
-              )`,
-        [req.session.idusuario])
-        .then(function (data) {
-          // console.log(data);
-          res.status(200)
-            .json(data);
-        })
-        .catch(function (err) {
-          return next(err);
-        });
-    } else {
-      res.status(404)
-      .json({
-        estado: false
-      });
-    }
-  } catch(err){}
-}
 
 
 // viejos
@@ -911,13 +804,12 @@ module.exports = {
   configuracionCalendarioTiempoAlerta:configuracionCalendarioTiempoAlerta,
   configuracionCalendarioActualizarTiempo:configuracionCalendarioActualizarTiempo,
   configuracionCalendarioNuevo:configuracionCalendarioNuevo,
+  obteneCalendario:obteneCalendario,
 
 
 
   // nuevos rod
-  inicioAgendaAhora:inicioAgendaAhora,
-  inicioAgendaManana:inicioAgendaManana,
-  inicioSolicitudes:inicioSolicitudes,
+  
 
 
   // viejos
